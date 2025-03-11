@@ -40,8 +40,7 @@ const MOCK_ROOMS = [
 export async function GET() {
   try {
     return NextResponse.json(MOCK_ROOMS);
-  } catch (error) {
-    console.error("獲取會議室列表失敗:", error);
+  } catch {
     return NextResponse.json(
       { error: "獲取會議室列表失敗" },
       { status: 500 }

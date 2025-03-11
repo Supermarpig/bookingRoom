@@ -33,7 +33,7 @@ export async function GET(
       : roomBookings;
 
     return NextResponse.json(filteredBookings);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "獲取預約狀態失敗" },
       { status: 500 }

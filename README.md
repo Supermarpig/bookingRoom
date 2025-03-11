@@ -33,6 +33,7 @@
 - UI 框架：Tailwind CSS
 - 狀態管理：React Hooks
 - API 路由：Next.js API Routes
+- 程式碼規範：ESLint + TypeScript
 
 ## 操作流程
 
@@ -76,6 +77,15 @@ npm install
 npm run dev
 ```
 
+### 檢查程式碼規範
+```bash
+# 檢查 ESLint 錯誤
+npm run lint
+
+# 自動修復 ESLint 錯誤
+npm run lint:fix
+```
+
 ### 生產環境建置
 ```bash
 npm run build
@@ -85,6 +95,64 @@ npm run build
 ```bash
 npm start
 ```
+
+## ESLint 規範說明
+
+為確保程式碼品質，本專案使用 ESLint 進行程式碼規範檢查。主要規範包括：
+
+1. TypeScript 相關規則
+   - 強制使用型別定義
+   - 避免使用 `any` 型別
+   - 確保正確的型別推導
+
+2. React 相關規則
+   - 強制使用 React Hooks 的依賴陣列
+   - 確保 key prop 的正確使用
+   - 避免不必要的重新渲染
+
+3. 程式碼風格規則
+   - 一致的縮排和空格使用
+   - 一致的引號使用
+   - 一致的分號使用
+
+4. 最佳實踐
+   - 避免未使用的變數
+   - 避免重複的 import
+   - 確保適當的錯誤處理
+
+## 常見 ESLint 錯誤處理
+
+1. 未使用的變數
+   ```typescript
+   // 錯誤
+   const unused = 'value';
+
+   // 正確
+   const used = 'value';
+   console.log(used);
+   ```
+
+2. 缺少依賴陣列
+   ```typescript
+   // 錯誤
+   useEffect(() => {
+     fetchData(id);
+   }, []); // 缺少 id 依賴
+
+   // 正確
+   useEffect(() => {
+     fetchData(id);
+   }, [id]);
+   ```
+
+3. 型別定義
+   ```typescript
+   // 錯誤
+   const data = [];
+
+   // 正確
+   const data: string[] = [];
+   ```
 
 ## 注意事項
 

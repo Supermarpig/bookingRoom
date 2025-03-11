@@ -44,7 +44,7 @@ export async function GET() {
   try {
     // 在實際應用中，這裡應該從資料庫中獲取當前登入用戶的預約記錄
     return NextResponse.json(MOCK_MY_BOOKINGS);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "獲取預約記錄失敗" },
       { status: 500 }
@@ -66,7 +66,7 @@ export async function DELETE(request: Request) {
 
     // 在實際應用中，這裡應該從資料庫中刪除指定的預約記錄
     return NextResponse.json({ message: "預約已取消" });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "取消預約失敗" },
       { status: 500 }

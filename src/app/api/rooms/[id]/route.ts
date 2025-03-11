@@ -38,12 +38,12 @@ const MOCK_ROOMS = [
 ];
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const room = MOCK_ROOMS.find((room) => room.id === params.id);
-
+    const room = MOCK_ROOMS.find(room => room.id === params.id);
+    
     if (!room) {
       return NextResponse.json(
         { error: "找不到指定的會議室" },
@@ -52,7 +52,7 @@ export async function GET(
     }
 
     return NextResponse.json(room);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "獲取會議室詳情失敗" },
       { status: 500 }

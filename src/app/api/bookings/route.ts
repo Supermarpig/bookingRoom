@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
@@ -7,10 +7,7 @@ export async function POST(request: Request) {
 
     // 驗證必要欄位
     if (!roomId || !date || !timeSlot) {
-      return NextResponse.json(
-        { error: "缺少必要欄位" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "缺少必要欄位" }, { status: 400 });
     }
 
     // 模擬預約成功
@@ -25,10 +22,7 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       },
     });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "預約失敗" },
-      { status: 500 }
-    );
+  } catch {
+    return NextResponse.json({ error: "預約失敗" }, { status: 500 });
   }
-} 
+}
