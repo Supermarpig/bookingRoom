@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
@@ -51,20 +51,7 @@ export default function RoomDetailPage() {
     "16:00-17:00",
   ];
 
-  useEffect(() => {
-    fetchRoomDetails();
-  }, [params.id]);
-
-  // 當日期改變時，獲取該日期的預約狀態
-  useEffect(() => {
-    if (selectedDate) {
-      fetchBookingStatus();
-    } else {
-      setBookedSlots([]);
-    }
-  }, [selectedDate, params.id]);
-
-  const fetchRoomDetails = async () => {
+  const fetchRoomDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/rooms/${params.id}`);
       if (!response.ok) {
@@ -77,9 +64,9 @@ export default function RoomDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
-  const fetchBookingStatus = async () => {
+  const fetchBookingStatus = useCallback(async () => {
     try {
       const response = await fetch(
         `/api/rooms/${params.id}/bookings?date=${selectedDate}`
@@ -92,7 +79,20 @@ export default function RoomDetailPage() {
     } catch (err) {
       console.error("獲取預約狀態失敗:", err);
     }
-  };
+  }, [params.id, selectedDate]);
+
+  useEffect(() => {
+    fetchRoomDetails();
+  }, [fetchRoomDetails]);
+
+  // 當日期改變時，獲取該日期的預約狀態
+  useEffect(() => {
+    if (selectedDate) {
+      fetchBookingStatus();
+    } else {
+      setBookedSlots([]);
+    }
+  }, [selectedDate, fetchBookingStatus]);
 
   // 獲取明天的日期作為最小可選日期
   const tomorrow = new Date();

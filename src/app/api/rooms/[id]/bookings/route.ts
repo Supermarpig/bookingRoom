@@ -18,14 +18,14 @@ const MOCK_BOOKINGS: { [key: string]: { date: string; timeSlot: string; bookedBy
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // 從 URL 獲取日期參數
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
 
-    const roomBookings = MOCK_BOOKINGS[params.id] || [];
+    const roomBookings = MOCK_BOOKINGS[context.params.id] || [];
     
     // 如果有指定日期，只返回該日期的預約
     const filteredBookings = date
