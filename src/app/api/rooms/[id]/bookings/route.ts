@@ -21,11 +21,11 @@ const MOCK_BOOKINGS: { [key: string]: Booking[] } = {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     // 驗證路由參數
-    const { id } = params;
+    const { id } = context.params;
     
     if (!id) {
       return NextResponse.json(
