@@ -3,22 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Modal from "@/components/Modal";
-
-interface Booking {
-  id: string;
-  roomId: string;
-  roomName: string;
-  date: string;
-  timeSlot: string;
-  bookedBy: {
-    name: string;
-    email: string;
-  };
-  status: "upcoming" | "completed" | "cancelled";
-}
+import { type MyBooking } from "@/types/schema";
 
 export default function MyBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<MyBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
@@ -85,7 +73,7 @@ export default function MyBookingsPage() {
     );
   }
 
-  const getStatusColor = (status: Booking["status"]) => {
+  const getStatusColor = (status: MyBooking["status"]) => {
     switch (status) {
       case "upcoming":
         return "text-blue-500 bg-blue-50";
@@ -98,7 +86,7 @@ export default function MyBookingsPage() {
     }
   };
 
-  const getStatusText = (status: Booking["status"]) => {
+  const getStatusText = (status: MyBooking["status"]) => {
     switch (status) {
       case "upcoming":
         return "即將到來";

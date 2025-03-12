@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { RoomsSchema, type Room } from '@/types/schema';
 
 // 模擬資料庫中的會議室數據
-const MOCK_ROOMS = [
+const MOCK_ROOMS: Room[] = [
   {
     id: "1",
     name: "大型會議室 A",
@@ -39,8 +41,17 @@ const MOCK_ROOMS = [
 
 export async function GET() {
   try {
-    return NextResponse.json(MOCK_ROOMS);
-  } catch {
+    // 驗證所有會議室數據
+    const validatedRooms = RoomsSchema.parse(MOCK_ROOMS);
+    return NextResponse.json(validatedRooms);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "資料驗證失敗", details: error.errors },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "獲取會議室列表失敗" },
       { status: 500 }

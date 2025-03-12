@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { CreateBookingSchema } from '@/types/schema';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { roomId, date, timeSlot } = body;
-
-    // 驗證必要欄位
-    if (!roomId || !date || !timeSlot) {
-      return NextResponse.json({ error: "缺少必要欄位" }, { status: 400 });
-    }
+    
+    // 驗證請求數據
+    const validatedData = CreateBookingSchema.parse(body);
 
     // 模擬預約成功
     return NextResponse.json({
@@ -16,13 +16,21 @@ export async function POST(request: Request) {
       message: "預約成功",
       booking: {
         id: Math.random().toString(36).substr(2, 9),
-        roomId,
-        date,
-        timeSlot,
+        ...validatedData,
         createdAt: new Date().toISOString(),
       },
     });
-  } catch {
-    return NextResponse.json({ error: "預約失敗" }, { status: 500 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "資料驗證失敗", details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: "預約失敗" },
+      { status: 500 }
+    );
   }
 }

@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { RoomSchema, ParamsSchema, type Room } from '@/types/schema';
 
 // 模擬資料庫中的會議室數據
-const MOCK_ROOMS = [
+const MOCK_ROOMS: Room[] = [
   {
     id: "1",
     name: "大型會議室 A",
@@ -38,11 +41,14 @@ const MOCK_ROOMS = [
 ];
 
 export async function GET(
-  _request: Request,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const room = MOCK_ROOMS.find(room => room.id === params.id);
+    // 驗證路由參數
+    const { id } = ParamsSchema.parse({ id: params.id });
+
+    const room = MOCK_ROOMS.find(room => room.id === id);
     
     if (!room) {
       return NextResponse.json(
@@ -51,8 +57,17 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(room);
-  } catch {
+    // 驗證會議室數據
+    const validatedRoom = RoomSchema.parse(room);
+    return NextResponse.json(validatedRoom);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: "資料驗證失敗", details: error.errors },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: "獲取會議室詳情失敗" },
       { status: 500 }

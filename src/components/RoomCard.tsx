@@ -1,13 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { type Room } from "@/types/schema";
 
-interface RoomCardProps {
-  id: string;
-  name: string;
-  capacity: number;
-  imageUrl: string;
-  facilities: string[];
-}
+type RoomCardProps = Pick<Room, 'id' | 'name' | 'capacity' | 'imageUrl' | 'facilities'>;
 
 const RoomCard = ({ id, name, capacity, imageUrl, facilities }: RoomCardProps) => {
   return (

@@ -2,14 +2,7 @@
 
 import { useState, useEffect } from "react";
 import RoomCard from "@/components/RoomCard";
-
-interface Room {
-  id: string;
-  name: string;
-  capacity: number;
-  imageUrl: string;
-  facilities: string[];
-}
+import { type Room } from "@/types/schema";
 
 export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
