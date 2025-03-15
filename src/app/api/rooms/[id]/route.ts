@@ -1,7 +1,6 @@
-import { NextResponse } from 'next/server';
-import { type NextRequest } from 'next/server';
-import { z } from 'zod';
-import { RoomSchema, ParamsSchema, type Room } from '@/types/schema';
+import { NextResponse, type NextRequest } from "next/server";
+import { z } from "zod";
+import { RoomSchema, ParamsSchema, type Room } from "@/types/schema";
 
 // 模擬資料庫中的會議室數據
 const MOCK_ROOMS: Room[] = [
@@ -11,7 +10,8 @@ const MOCK_ROOMS: Room[] = [
     capacity: 20,
     imageUrl: "https://picsum.photos/1200/800?random=1",
     facilities: ["投影機", "WiFi", "白板"],
-    description: "寬敞明亮的大型會議室，配備高清投影設備和完整的會議系統，適合舉辦大型會議、培訓或演講。",
+    description:
+      "寬敞明亮的大型會議室，配備高清投影設備和完整的會議系統，適合舉辦大型會議、培訓或演講。",
     location: "3樓 301室",
     area: "50平方米",
     hourlyRate: 1000,
@@ -42,14 +42,17 @@ const MOCK_ROOMS: Room[] = [
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> } // 👈 必須改為 Promise
+): Promise<NextResponse> {
   try {
-    // 驗證路由參數
-    const { id } = ParamsSchema.parse({ id: params.id });
+    // 關鍵修正點：必須使用 await 解決 Promise
+    const { id } = await params;
 
-    const room = MOCK_ROOMS.find(room => room.id === id);
-    
+    // 驗證路由參數
+    const validatedParams = ParamsSchema.parse({ id });
+
+    const room = MOCK_ROOMS.find((room) => room.id === validatedParams.id);
+
     if (!room) {
       return NextResponse.json(
         { error: "找不到指定的會議室" },
@@ -67,10 +70,7 @@ export async function GET(
         { status: 400 }
       );
     }
-    
-    return NextResponse.json(
-      { error: "獲取會議室詳情失敗" },
-      { status: 500 }
-    );
+
+    return NextResponse.json({ error: "獲取會議室詳情失敗" }, { status: 500 });
   }
-} 
+}
