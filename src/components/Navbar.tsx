@@ -73,6 +73,17 @@ const Navbar = () => {
                     <p className="text-sm font-medium">{session.user?.name}</p>
                   </div>
                   <DropdownMenuSeparator />
+                  {session.user?.role === "ADMIN" && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>後台管理</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
                   <DropdownMenuItem className="cursor-pointer">
                     <User className="mr-2 h-4 w-4" />
                     <span>個人資料</span>
@@ -136,6 +147,16 @@ const Navbar = () => {
                     >
                       <span>我的預約</span>
                     </Link>
+                    {session?.user?.role === "ADMIN" && (
+                      <Link
+                        href="/admin"
+                        className="flex items-center space-x-2 text-gray-600 hover:text-[#00d2be] py-3 px-4 rounded-lg hover:bg-gray-50 transition-all"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <User className="h-4 w-4" />
+                        <span>後台管理</span>
+                      </Link>
+                    )}
                   </div>
                 </div>
                 <div className="p-4 border-t">
