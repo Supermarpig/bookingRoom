@@ -10,44 +10,67 @@ declare global {
   var mongoose: GlobalMongo | undefined;
 }
 
-if (!process.env.MONGODB_URI) {
-  throw new Error('請在 .env.local 文件中設置 MONGODB_URI');
-}
-
 const MONGODB_URI = process.env.MONGODB_URI;
 
-const cached: GlobalMongo = global.mongoose ?? {
-  conn: null,
-  promise: null,
-};
+if (!MONGODB_URI) {
+  throw new Error('請在環境變數中設定 MONGODB_URI');
+}
+
+const cached: GlobalMongo = global.mongoose || { conn: null, promise: null };
 
 if (!global.mongoose) {
   global.mongoose = cached;
 }
 
-async function connectDB(): Promise<typeof mongoose> {
+async function connectDB() {
   if (cached.conn) {
+    console.log('使用已存在的 MongoDB 連接');
     return cached.conn;
   }
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
+      bufferCommands: true,
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4,
+      retryWrites: true,
+      retryReads: true
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
+    console.log('正在建立新的 MongoDB 連接...');
+    cached.promise = mongoose.connect(MONGODB_URI!, opts)
+      .then((mongoose) => {
+        console.log('MongoDB 連接成功');
+        mongoose.set('debug', { 
+          shell: true,
+          color: true
+        });
+        
+        // 監聽所有 MongoDB 事件
+        const db = mongoose.connection;
+        db.on('error', (error) => console.error('MongoDB 錯誤:', error));
+        db.on('disconnected', () => console.log('MongoDB 連接斷開'));
+        db.on('reconnected', () => console.log('MongoDB 重新連接'));
+        db.on('connected', () => console.log('MongoDB 已連接'));
+        
+        return mongoose;
+      })
+      .catch((error) => {
+        console.error('MongoDB 連接失敗:', error);
+        throw error;
+      });
   }
 
   try {
     cached.conn = await cached.promise;
+    console.log('MongoDB 連接狀態:', mongoose.connection.readyState);
+    return cached.conn;
   } catch (e) {
     cached.promise = null;
     throw e;
   }
-
-  return cached.conn;
 }
 
 export default connectDB; 

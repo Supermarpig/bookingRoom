@@ -27,6 +27,7 @@ export const RoomSchema = z.object({
   location: z.string().min(1, "位置不能為空"),
   area: z.string().min(1, "面積不能為空"),
   hourlyRate: z.number().positive("每小時收費必須為正數"),
+  availableTimeSlots: z.array(z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM")).default([]),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date())
 });

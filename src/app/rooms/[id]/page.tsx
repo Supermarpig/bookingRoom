@@ -41,16 +41,22 @@ export default function RoomDetailPage() {
     email: false,
   });
 
-  // 模擬時段數據
-  const timeSlots = [
-    "09:00-10:00",
-    "10:00-11:00",
-    "11:00-12:00",
-    "13:00-14:00",
-    "14:00-15:00",
-    "15:00-16:00",
-    "16:00-17:00",
-  ];
+  // 使用會議室的可用時段
+  const timeSlots = room?.availableTimeSlots || [];
+
+  // 時段分類函數
+  const filterTimeSlots = (start: number, end: number) => {
+    return timeSlots.filter(slot => {
+      const hour = parseInt(slot.split(":")[0]);
+      return hour >= start && hour < end;
+    });
+  };
+
+  // 分類時段
+  const dawnSlots = filterTimeSlots(0, 6);
+  const morningSlots = filterTimeSlots(6, 12);
+  const afternoonSlots = filterTimeSlots(12, 18);
+  const eveningSlots = filterTimeSlots(18, 24);
 
   // 設定日期範圍
   const today = startOfToday();
@@ -431,59 +437,234 @@ export default function RoomDetailPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   選擇時段
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {timeSlots.map((slot) => {
-                    const booking = bookedSlots.find(
-                      (b) => b.timeSlot === slot
-                    );
-                    const isBooked = Boolean(booking);
-                    const isSelected = selectedTimeSlot === slot;
-                    return (
-                      <Button
-                        key={slot}
-                        variant={isSelected ? "default" : "outline"}
-                        disabled={isBooked || !selectedDate}
-                        onClick={() => {
-                          if (!session?.user) {
-                            setIsLoginModalOpen(true);
-                            return;
-                          }
-                          setSelectedTimeSlot(slot);
-                        }}
-                        className={cn(
-                          "h-auto py-2 relative",
-                          isBooked &&
-                            "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
-                          isSelected &&
-                            "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
-                          !selectedDate && "cursor-not-allowed opacity-50"
-                        )}
-                      >
-                        <div className="w-full">
-                          <div>{slot}</div>
-                          {isBooked && booking && (
-                            <div className="text-xs mt-1">
-                              <span className="block text-red-500">已預約</span>
-                              {session?.user?.role === "ADMIN" ? (
-                                <>
-                                  <span className="block text-gray-500">
-                                    預約者：{booking.userName}
-                                  </span>
-                                  <span className="block text-gray-500 truncate">
-                                    {booking.userEmail}
-                                  </span>
-                                </>
-                              ) : (
-                                <span className="block text-gray-500">
-                                  此時段已被預約
-                                </span>
+                <div className="space-y-4">
+                  {/* 凌晨時段 */}
+                  {dawnSlots.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">凌晨 (00:00-05:59)</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {dawnSlots.map((slot) => {
+                          const booking = bookedSlots.find((b) => b.timeSlot === slot);
+                          const isBooked = Boolean(booking);
+                          const isSelected = selectedTimeSlot === slot;
+                          return (
+                            <Button
+                              key={slot}
+                              variant={isSelected ? "default" : "outline"}
+                              disabled={isBooked || !selectedDate}
+                              onClick={() => {
+                                if (!session?.user) {
+                                  setIsLoginModalOpen(true);
+                                  return;
+                                }
+                                setSelectedTimeSlot(slot);
+                              }}
+                              className={cn(
+                                "h-auto py-2 relative",
+                                isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
+                                isSelected && "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
+                                !selectedDate && "cursor-not-allowed opacity-50"
                               )}
-                            </div>
-                          )}
-                        </div>
-                      </Button>
-                    );
-                  })}
+                            >
+                              <div className="w-full">
+                                <div>{slot}</div>
+                                {isBooked && booking && (
+                                  <div className="text-xs mt-1">
+                                    <span className="block text-red-500">已預約</span>
+                                    {session?.user?.role === "ADMIN" ? (
+                                      <>
+                                        <span className="block text-gray-500">
+                                          預約者：{booking.userName}
+                                        </span>
+                                        <span className="block text-gray-500 truncate">
+                                          {booking.userEmail}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="block text-gray-500">
+                                        此時段已被預約
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 上午時段 */}
+                  {morningSlots.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">上午 (06:00-11:59)</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {morningSlots.map((slot) => {
+                          const booking = bookedSlots.find((b) => b.timeSlot === slot);
+                          const isBooked = Boolean(booking);
+                          const isSelected = selectedTimeSlot === slot;
+                          return (
+                            <Button
+                              key={slot}
+                              variant={isSelected ? "default" : "outline"}
+                              disabled={isBooked || !selectedDate}
+                              onClick={() => {
+                                if (!session?.user) {
+                                  setIsLoginModalOpen(true);
+                                  return;
+                                }
+                                setSelectedTimeSlot(slot);
+                              }}
+                              className={cn(
+                                "h-auto py-2 relative",
+                                isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
+                                isSelected && "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
+                                !selectedDate && "cursor-not-allowed opacity-50"
+                              )}
+                            >
+                              <div className="w-full">
+                                <div>{slot}</div>
+                                {isBooked && booking && (
+                                  <div className="text-xs mt-1">
+                                    <span className="block text-red-500">已預約</span>
+                                    {session?.user?.role === "ADMIN" ? (
+                                      <>
+                                        <span className="block text-gray-500">
+                                          預約者：{booking.userName}
+                                        </span>
+                                        <span className="block text-gray-500 truncate">
+                                          {booking.userEmail}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="block text-gray-500">
+                                        此時段已被預約
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 下午時段 */}
+                  {afternoonSlots.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">下午 (12:00-17:59)</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {afternoonSlots.map((slot) => {
+                          const booking = bookedSlots.find((b) => b.timeSlot === slot);
+                          const isBooked = Boolean(booking);
+                          const isSelected = selectedTimeSlot === slot;
+                          return (
+                            <Button
+                              key={slot}
+                              variant={isSelected ? "default" : "outline"}
+                              disabled={isBooked || !selectedDate}
+                              onClick={() => {
+                                if (!session?.user) {
+                                  setIsLoginModalOpen(true);
+                                  return;
+                                }
+                                setSelectedTimeSlot(slot);
+                              }}
+                              className={cn(
+                                "h-auto py-2 relative",
+                                isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
+                                isSelected && "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
+                                !selectedDate && "cursor-not-allowed opacity-50"
+                              )}
+                            >
+                              <div className="w-full">
+                                <div>{slot}</div>
+                                {isBooked && booking && (
+                                  <div className="text-xs mt-1">
+                                    <span className="block text-red-500">已預約</span>
+                                    {session?.user?.role === "ADMIN" ? (
+                                      <>
+                                        <span className="block text-gray-500">
+                                          預約者：{booking.userName}
+                                        </span>
+                                        <span className="block text-gray-500 truncate">
+                                          {booking.userEmail}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="block text-gray-500">
+                                        此時段已被預約
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 晚上時段 */}
+                  {eveningSlots.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-500 mb-2">晚上 (18:00-23:59)</h3>
+                      <div className="grid grid-cols-2 gap-2">
+                        {eveningSlots.map((slot) => {
+                          const booking = bookedSlots.find((b) => b.timeSlot === slot);
+                          const isBooked = Boolean(booking);
+                          const isSelected = selectedTimeSlot === slot;
+                          return (
+                            <Button
+                              key={slot}
+                              variant={isSelected ? "default" : "outline"}
+                              disabled={isBooked || !selectedDate}
+                              onClick={() => {
+                                if (!session?.user) {
+                                  setIsLoginModalOpen(true);
+                                  return;
+                                }
+                                setSelectedTimeSlot(slot);
+                              }}
+                              className={cn(
+                                "h-auto py-2 relative",
+                                isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
+                                isSelected && "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
+                                !selectedDate && "cursor-not-allowed opacity-50"
+                              )}
+                            >
+                              <div className="w-full">
+                                <div>{slot}</div>
+                                {isBooked && booking && (
+                                  <div className="text-xs mt-1">
+                                    <span className="block text-red-500">已預約</span>
+                                    {session?.user?.role === "ADMIN" ? (
+                                      <>
+                                        <span className="block text-gray-500">
+                                          預約者：{booking.userName}
+                                        </span>
+                                        <span className="block text-gray-500 truncate">
+                                          {booking.userEmail}
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="block text-gray-500">
+                                        此時段已被預約
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <Button

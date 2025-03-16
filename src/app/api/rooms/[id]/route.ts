@@ -43,9 +43,12 @@ export async function GET(
       location: room.location,
       area: room.area,
       hourlyRate: room.hourlyRate,
+      availableTimeSlots: room.availableTimeSlots || [], // 確保即使是舊數據也有這個字段
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
     };
+
+    console.log("返回的會議室數據:", JSON.stringify(formattedRoom, null, 2));
 
     // 驗證會議室數據
     const validatedRoom = RoomSchema.parse(formattedRoom);
@@ -96,5 +99,63 @@ export async function DELETE(
   } catch (error) {
     console.error("刪除會議室失敗:", error);
     return NextResponse.json({ error: "刪除會議室失敗" }, { status: 500 });
+  }
+}
+
+// 更新會議室
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  try {
+    const { params } = context;
+    const { id } = await params;
+    const body = await request.json();
+
+    await connectDB();
+
+    // 查找並更新會議室
+    const room = await Room.findByIdAndUpdate(
+      id,
+      { $set: body },
+      { new: true, runValidators: true }
+    );
+
+    if (!room) {
+      return NextResponse.json(
+        { error: "找不到指定的會議室" },
+        { status: 404 }
+      );
+    }
+
+    // 格式化回傳資料
+    const formattedRoom = {
+      id: room._id.toString(),
+      name: room.name,
+      capacity: room.capacity,
+      imageUrl: room.imageUrl,
+      facilities: room.facilities,
+      description: room.description,
+      location: room.location,
+      area: room.area,
+      hourlyRate: room.hourlyRate,
+      availableTimeSlots: room.availableTimeSlots || [],
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt,
+    };
+
+    return NextResponse.json(formattedRoom);
+  } catch (error) {
+    console.error("更新會議室失敗:", error);
+    if (error instanceof Error && error.name === 'ValidationError') {
+      return NextResponse.json(
+        { error: "驗證失敗", message: error.message },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json(
+      { error: "更新會議室失敗", message: error instanceof Error ? error.message : '未知錯誤' },
+      { status: 500 }
+    );
   }
 }
