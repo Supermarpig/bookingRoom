@@ -31,14 +31,14 @@ export async function GET() {
       date: todayStr
     });
 
-    // 用於調試
-    console.log('Taiwan time:', taiwanTime);
-    console.log('Today date:', todayStr);
-    console.log('Found bookings:', todayBookings);
+    // // 用於調試
+    // console.log('Taiwan time:', taiwanTime);
+    // console.log('Today date:', todayStr);
+    // console.log('Found bookings:', todayBookings);
     
     // 也列出今天的所有預約，用於調試
-    const bookings = await Booking.find({ date: todayStr });
-    console.log('Today\'s bookings:', JSON.stringify(bookings, null, 2));
+    // const bookings = await Booking.find({ date: todayStr });
+    // console.log('Today\'s bookings:', JSON.stringify(bookings, null, 2));
 
     // 獲取會議室總數
     const totalRooms = await Room.countDocuments();

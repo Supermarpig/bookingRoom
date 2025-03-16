@@ -17,7 +17,7 @@ export default function Home() {
           瀏覽會議室
         </Link>
         <Link
-          href="/auth/signin"
+          href={`/auth/signin?callbackUrl=${encodeURIComponent("/")}`}
           className="border-2 border-[#00d2be] text-[#00d2be] hover:bg-[#00d2be] hover:text-white px-6 py-3 rounded-lg text-lg font-medium transition-colors"
         >
           立即登入

@@ -18,7 +18,7 @@ export default function MyBookingsPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin");
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/my-bookings")}`);
     } else if (status === "authenticated") {
       fetchBookings();
     }

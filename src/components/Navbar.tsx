@@ -53,7 +53,7 @@ const Navbar = () => {
             </Link>
             {!session ? (
               <Link
-                href="/auth/signin"
+                href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                 className="bg-[#00d2be] hover:bg-[#00bfad] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 登入
@@ -162,7 +162,7 @@ const Navbar = () => {
                 <div className="p-4 border-t">
                   {!session ? (
                     <Link
-                      href="/auth/signin"
+                      href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                       className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center"
                       onClick={() => setIsOpen(false)}
                     >

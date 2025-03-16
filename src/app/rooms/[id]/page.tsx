@@ -8,7 +8,14 @@ import { useSession } from "next-auth/react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { type Room, type Booking } from "@/types/schema";
 import { cn } from "@/lib/utils";
 import { format, startOfToday, addDays } from "date-fns";
@@ -27,10 +34,11 @@ export default function RoomDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [bookedSlots, setBookedSlots] = useState<Booking[]>([]);
   const [touched, setTouched] = useState({
     name: false,
-    email: false
+    email: false,
   });
 
   // 模擬時段數據
@@ -73,29 +81,32 @@ export default function RoomDetailPage() {
 
   const fetchBookingStatus = useCallback(async () => {
     if (!selectedDate) return;
-    
+
     try {
       // 確保日期格式正確
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      console.log('發送請求的日期:', formattedDate);
-      
+      const formattedDate = format(selectedDate, "yyyy-MM-dd");
+      // console.log("發送請求的日期:", formattedDate);
+
       const response = await fetch(
         `/api/rooms/${params.id}/bookings?date=${formattedDate}`
       );
-      
+
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API 錯誤回應:', errorData);
-        throw new Error(errorData.message || errorData.error || '獲取預約狀態失敗');
+        // console.error("API 錯誤回應:", errorData);
+        throw new Error(
+          errorData.message || errorData.error || "獲取預約狀態失敗"
+        );
       }
-      
+
       const bookings: Booking[] = await response.json();
-      console.log('收到的預約資料:', bookings);
+      console.log("收到的預約資料:", bookings);
       setBookedSlots(bookings);
       setError(null); // 清除之前的錯誤
     } catch (err) {
-      console.error('獲取預約狀態失敗:', err);
-      const errorMessage = err instanceof Error ? err.message : '獲取預約狀態失敗';
+      console.error("獲取預約狀態失敗:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "獲取預約狀態失敗";
       setError(errorMessage);
       setBookedSlots([]); // 清空預約記錄
     }
@@ -107,25 +118,30 @@ export default function RoomDetailPage() {
 
   useEffect(() => {
     if (selectedDate) {
-      console.log('日期已選擇，正在獲取預約狀態...');
+      // console.log("日期已選擇，正在獲取預約狀態...");
       setSelectedTimeSlot(""); // 當日期改變時，清空已選時段
       fetchBookingStatus();
     } else {
-      console.log('未選擇日期');
+      // console.log("未選擇日期");
       setBookedSlots([]);
     }
   }, [selectedDate, fetchBookingStatus]);
 
   const handleDateSelect = (date: Date | undefined) => {
-    console.log('選擇新日期:', date);
+    // console.log("選擇新日期:", date);
     setSelectedDate(date);
   };
 
   const handleBooking = async () => {
+    if (!session?.user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
     // 設置所有欄位為已觸碰
     setTouched({
       name: true,
-      email: true
+      email: true,
     });
 
     if (!selectedDate || !selectedTimeSlot) {
@@ -149,12 +165,12 @@ export default function RoomDetailPage() {
         },
         body: JSON.stringify({
           roomId: params.id,
-          date: format(selectedDate, 'yyyy-MM-dd'),
+          date: format(selectedDate, "yyyy-MM-dd"),
           timeSlot: selectedTimeSlot,
           bookedBy: {
             name: bookerName,
-            email: bookerEmail
-          }
+            email: bookerEmail,
+          },
         }),
       });
 
@@ -180,7 +196,7 @@ export default function RoomDetailPage() {
     // 重置觸碰狀態
     setTouched({
       name: false,
-      email: false
+      email: false,
     });
     // 導航回會議室列表
     router.push("/rooms");
@@ -258,11 +274,15 @@ export default function RoomDetailPage() {
                   <p className="text-gray-900">{room.area}</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-500">容納人數</h3>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    容納人數
+                  </h3>
                   <p className="text-gray-900">{room.capacity} 人</p>
                 </div>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-500">每小時收費</h3>
+                  <h3 className="text-sm font-medium text-gray-500">
+                    每小時收費
+                  </h3>
                   <p className="text-gray-900">NT$ {room.hourlyRate}</p>
                 </div>
               </div>
@@ -298,21 +318,25 @@ export default function RoomDetailPage() {
                   type="text"
                   value={bookerName}
                   onChange={(e) => setBookerName(e.target.value)}
-                  onBlur={() => setTouched(prev => ({ ...prev, name: true }))}
+                  onBlur={() => setTouched((prev) => ({ ...prev, name: true }))}
+                  onFocus={() => {
+                    if (!session?.user) {
+                      setIsLoginModalOpen(true);
+                    }
+                  }}
                   placeholder="請輸入姓名"
                   className={cn(
-                    touched.name && !bookerName && "border-red-500 focus-visible:ring-red-500"
+                    touched.name &&
+                      !bookerName &&
+                      "border-red-500 focus-visible:ring-red-500"
                   )}
                   required
                   disabled={!!session?.user}
                 />
                 {touched.name && !bookerName && (
-                  <p className="mt-1 text-sm text-red-500">
-                    請輸入預約者姓名
-                  </p>
+                  <p className="mt-1 text-sm text-red-500">請輸入預約者姓名</p>
                 )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   電子郵件
@@ -321,27 +345,38 @@ export default function RoomDetailPage() {
                   type="email"
                   value={bookerEmail}
                   onChange={(e) => setBookerEmail(e.target.value)}
-                  onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                  onBlur={() =>
+                    setTouched((prev) => ({ ...prev, email: true }))
+                  }
+                  onFocus={() => {
+                    if (!session?.user) {
+                      setIsLoginModalOpen(true);
+                    }
+                  }}
                   placeholder="請輸入電子郵件"
                   className={cn(
-                    touched.email && !bookerEmail && "border-red-500 focus-visible:ring-red-500",
-                    touched.email && bookerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookerEmail) && "border-red-500 focus-visible:ring-red-500"
+                    touched.email &&
+                      !bookerEmail &&
+                      "border-red-500 focus-visible:ring-red-500",
+                    touched.email &&
+                      bookerEmail &&
+                      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookerEmail) &&
+                      "border-red-500 focus-visible:ring-red-500"
                   )}
                   required
                   disabled={!!session?.user}
                 />
                 {touched.email && !bookerEmail && (
-                  <p className="mt-1 text-sm text-red-500">
-                    請輸入電子郵件
-                  </p>
+                  <p className="mt-1 text-sm text-red-500">請輸入電子郵件</p>
                 )}
-                {touched.email && bookerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookerEmail) && (
-                  <p className="mt-1 text-sm text-red-500">
-                    請輸入有效的電子郵件地址
-                  </p>
-                )}
+                {touched.email &&
+                  bookerEmail &&
+                  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookerEmail) && (
+                    <p className="mt-1 text-sm text-red-500">
+                      請輸入有效的電子郵件地址
+                    </p>
+                  )}
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   選擇日期
@@ -350,19 +385,27 @@ export default function RoomDetailPage() {
                   mode="single"
                   selected={selectedDate}
                   onSelect={handleDateSelect}
+                  onDayClick={() => {
+                    if (!session?.user) {
+                      setIsLoginModalOpen(true);
+                    }
+                  }}
                   locale={zhTW}
                   fromDate={today}
                   toDate={maxDate}
                   className="rounded-md border mx-auto bg-white"
                   classNames={{
-                    day_selected: "bg-[#00d2be] hover:bg-[#00bfad] text-white focus:bg-[#00d2be]",
-                    day_today: "bg-[#00d2be]/10 text-[#00d2be] font-bold hover:bg-[#00d2be] hover:text-white",
+                    day_selected:
+                      "bg-[#00d2be] hover:bg-[#00bfad] text-white focus:bg-[#00d2be]",
+                    day_today:
+                      "bg-[#00d2be]/10 text-[#00d2be] font-bold hover:bg-[#00d2be] hover:text-white",
                     day: cn(
                       buttonVariants({ variant: "ghost" }),
                       "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
                     ),
                     day_disabled: "text-muted-foreground opacity-50",
-                    day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_range_middle:
+                      "aria-selected:bg-accent aria-selected:text-accent-foreground",
                     day_hidden: "invisible",
                     nav_button: cn(
                       buttonVariants({ variant: "outline" }),
@@ -372,25 +415,27 @@ export default function RoomDetailPage() {
                     nav_button_next: "absolute right-1",
                     table: "w-full border-collapse space-y-1",
                     head_row: "flex",
-                    head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                    head_cell:
+                      "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
                     row: "flex w-full mt-2",
                     cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
                     caption: "flex justify-center pt-1 relative items-center",
                     caption_label: "text-sm font-medium",
                     nav: "space-x-1 flex items-center",
-                    months: "space-y-4"
+                    months: "space-y-4",
                   }}
                   initialFocus
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   選擇時段
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {timeSlots.map((slot) => {
-                    const booking = bookedSlots.find(b => b.timeSlot === slot);
+                    const booking = bookedSlots.find(
+                      (b) => b.timeSlot === slot
+                    );
                     const isBooked = Boolean(booking);
                     const isSelected = selectedTimeSlot === slot;
                     return (
@@ -398,11 +443,19 @@ export default function RoomDetailPage() {
                         key={slot}
                         variant={isSelected ? "default" : "outline"}
                         disabled={isBooked || !selectedDate}
-                        onClick={() => setSelectedTimeSlot(slot)}
+                        onClick={() => {
+                          if (!session?.user) {
+                            setIsLoginModalOpen(true);
+                            return;
+                          }
+                          setSelectedTimeSlot(slot);
+                        }}
                         className={cn(
                           "h-auto py-2 relative",
-                          isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
-                          isSelected && "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
+                          isBooked &&
+                            "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
+                          isSelected &&
+                            "bg-[#00d2be] hover:bg-[#00bfad] text-white border-transparent",
                           !selectedDate && "cursor-not-allowed opacity-50"
                         )}
                       >
@@ -413,11 +466,17 @@ export default function RoomDetailPage() {
                               <span className="block text-red-500">已預約</span>
                               {session?.user?.role === "ADMIN" ? (
                                 <>
-                                  <span className="block text-gray-500">預約者：{booking.userName}</span>
-                                  <span className="block text-gray-500 truncate">{booking.userEmail}</span>
+                                  <span className="block text-gray-500">
+                                    預約者：{booking.userName}
+                                  </span>
+                                  <span className="block text-gray-500 truncate">
+                                    {booking.userEmail}
+                                  </span>
                                 </>
                               ) : (
-                                <span className="block text-gray-500">此時段已被預約</span>
+                                <span className="block text-gray-500">
+                                  此時段已被預約
+                                </span>
                               )}
                             </div>
                           )}
@@ -427,11 +486,15 @@ export default function RoomDetailPage() {
                   })}
                 </div>
               </div>
-
               <Button
                 onClick={handleBooking}
                 className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white"
-                disabled={!selectedDate || !selectedTimeSlot || !bookerName || !bookerEmail}
+                disabled={
+                  !selectedDate ||
+                  !selectedTimeSlot ||
+                  !bookerName ||
+                  !bookerEmail
+                }
               >
                 立即預約
               </Button>
@@ -465,7 +528,10 @@ export default function RoomDetailPage() {
                   <p>您已成功預約 {room.name}</p>
                   <p>預約者：{bookerName}</p>
                   <p>電子郵件：{bookerEmail}</p>
-                  <p>日期：{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}</p>
+                  <p>
+                    日期：
+                    {selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
+                  </p>
                   <p>時段：{selectedTimeSlot}</p>
                 </div>
               </div>
@@ -476,6 +542,44 @@ export default function RoomDetailPage() {
               返回會議室列表
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isLoginModalOpen} onOpenChange={setIsLoginModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>需要登入</DialogTitle>
+            <DialogDescription>
+              <div className="text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
+                  <svg
+                    className="h-6 w-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <p className="text-gray-500 mb-4">請先登入以進行會議室預約</p>
+                <Button
+                  onClick={() => {
+                    setIsLoginModalOpen(false);
+                    const currentPath = window.location.pathname + window.location.search;
+                    router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+                  }}
+                  className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white"
+                >
+                  前往登入
+                </Button>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
         </DialogContent>
       </Dialog>
     </>

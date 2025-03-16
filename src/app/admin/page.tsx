@@ -30,7 +30,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/auth/signin");
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/admin")}`);
     } else if (status === "authenticated") {
       // 檢查是否為管理員
       const user = session?.user as ExtendedUser;
