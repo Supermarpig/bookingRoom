@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import User from "@/models/User";
+import connectDB from "@/lib/mongodb";
 
 export async function PATCH(
   request: NextRequest,
@@ -20,6 +21,9 @@ export async function PATCH(
   }
 
   try {
+    // 連接到資料庫
+    await connectDB();
+    
     const { id } = await params;
     const { isAdmin } = await request.json();
 
@@ -28,20 +32,18 @@ export async function PATCH(
       return new NextResponse("Cannot modify own admin status", { status: 400 });
     }
 
-    const user = await prisma.user.update({
-      where: {
-        id: id,
-      },
-      data: {
-        role: isAdmin ? "ADMIN" : "USER",
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-      },
-    });
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role: isAdmin ? "ADMIN" : "USER" },
+      { 
+        new: true,
+        select: "id name email role"
+      }
+    );
+
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 });
+    }
 
     return NextResponse.json(user);
   } catch (error) {
