@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import { type MyBooking } from "@/types/schema";
 
 export default function MyBookingsPage() {
+  const { status } = useSession();
+  const router = useRouter();
   const [bookings, setBookings] = useState<MyBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,12 +17,16 @@ export default function MyBookingsPage() {
   const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBookings();
-  }, []);
+    if (status === "unauthenticated") {
+      router.push("/auth/signin");
+    } else if (status === "authenticated") {
+      fetchBookings();
+    }
+  }, [status, router]);
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch("/api/my-bookings");
+      const response = await fetch("/api/bookings");
       if (!response.ok) {
         throw new Error("獲取預約記錄失敗");
       }
@@ -35,7 +43,7 @@ export default function MyBookingsPage() {
     if (!selectedBookingId) return;
 
     try {
-      const response = await fetch(`/api/my-bookings?id=${selectedBookingId}`, {
+      const response = await fetch(`/api/bookings/${selectedBookingId}`, {
         method: "DELETE",
       });
 
@@ -57,7 +65,7 @@ export default function MyBookingsPage() {
     setIsConfirmModalOpen(true);
   };
 
-  if (loading) {
+  if (status === "loading" || loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00d2be]"></div>
@@ -73,27 +81,27 @@ export default function MyBookingsPage() {
     );
   }
 
-  const getStatusColor = (status: MyBooking["status"]) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "upcoming":
-        return "text-blue-500 bg-blue-50";
-      case "completed":
+      case "PENDING":
+        return "text-yellow-500 bg-yellow-50";
+      case "APPROVED":
         return "text-green-500 bg-green-50";
-      case "cancelled":
+      case "REJECTED":
         return "text-red-500 bg-red-50";
       default:
         return "text-gray-500 bg-gray-50";
     }
   };
 
-  const getStatusText = (status: MyBooking["status"]) => {
+  const getStatusText = (status: string) => {
     switch (status) {
-      case "upcoming":
-        return "即將到來";
-      case "completed":
-        return "已完成";
-      case "cancelled":
-        return "已取消";
+      case "PENDING":
+        return "待審核";
+      case "APPROVED":
+        return "已核准";
+      case "REJECTED":
+        return "已拒絕";
       default:
         return status;
     }
@@ -128,8 +136,8 @@ export default function MyBookingsPage() {
                   <div className="space-y-1 text-sm text-gray-600">
                     <p>預約日期：{booking.date}</p>
                     <p>預約時段：{booking.timeSlot}</p>
-                    <p>預約者：{booking.bookedBy.name}</p>
-                    <p>電子郵件：{booking.bookedBy.email}</p>
+                    <p>預約者：{booking.userName}</p>
+                    <p>電子郵件：{booking.userEmail}</p>
                   </div>
                 </div>
                 <div className="flex flex-col items-end space-y-2">
@@ -140,7 +148,7 @@ export default function MyBookingsPage() {
                   >
                     {getStatusText(booking.status)}
                   </span>
-                  {booking.status === "upcoming" && (
+                  {booking.status === "PENDING" && (
                     <button
                       onClick={() => openCancelModal(booking.id)}
                       className="text-red-500 hover:text-red-600 text-sm font-medium"

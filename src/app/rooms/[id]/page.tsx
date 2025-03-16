@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { format, startOfToday, addDays } from "date-fns";
 import { zhTW } from "date-fns/locale";
 
 export default function RoomDetailPage() {
+  const { data: session } = useSession();
   const params = useParams();
   const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
@@ -45,6 +47,14 @@ export default function RoomDetailPage() {
   const today = startOfToday();
   const tomorrow = addDays(today, 1);
   const maxDate = addDays(today, 30);
+
+  // 當 session 改變時，更新預約者資訊
+  useEffect(() => {
+    if (session?.user) {
+      setBookerName(session.user.name || "");
+      setBookerEmail(session.user.email || "");
+    }
+  }, [session]);
 
   const fetchRoomDetails = useCallback(async () => {
     try {
@@ -294,6 +304,7 @@ export default function RoomDetailPage() {
                     touched.name && !bookerName && "border-red-500 focus-visible:ring-red-500"
                   )}
                   required
+                  disabled={!!session?.user}
                 />
                 {touched.name && !bookerName && (
                   <p className="mt-1 text-sm text-red-500">
@@ -317,6 +328,7 @@ export default function RoomDetailPage() {
                     touched.email && bookerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookerEmail) && "border-red-500 focus-visible:ring-red-500"
                   )}
                   required
+                  disabled={!!session?.user}
                 />
                 {touched.email && !bookerEmail && (
                   <p className="mt-1 text-sm text-red-500">

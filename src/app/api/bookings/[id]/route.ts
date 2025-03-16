@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { updateBookingSchema } from '@/types/booking'
-import { z } from 'zod'
+import connectDB from '@/lib/mongodb'
+import Booking from '@/models/Booking'
 
+// 更新預約狀態
 export async function PATCH(
-  req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -16,25 +16,69 @@ export async function PATCH(
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const body = await req.json()
-    const { status, note } = updateBookingSchema.parse(body)
+    const body = await request.json()
+    await connectDB()
 
-    const booking = await prisma.booking.update({
-      where: {
-        id: params.id,
+    const booking = await Booking.findByIdAndUpdate(
+      params.id,
+      { 
+        status: body.status,
+        note: body.note,
+        updatedAt: new Date()
       },
-      data: {
-        status,
-        note,
-      },
-    })
+      { new: true }
+    )
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: '預約不存在' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json(booking)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return new NextResponse('Invalid request data', { status: 422 })
+    console.error('更新預約失敗:', error)
+    return NextResponse.json(
+      { error: '更新預約失敗' },
+      { status: 500 }
+    )
+  }
+}
+
+// 刪除預約
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    return new NextResponse('Internal error', { status: 500 })
+    await connectDB()
+    
+    const booking = await Booking.findOne({
+      _id: params.id,
+      userId: session.user.id
+    })
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: '預約不存在或無權限刪除' },
+        { status: 404 }
+      )
+    }
+
+    await Booking.findByIdAndDelete(params.id)
+
+    return NextResponse.json({ message: '預約已成功刪除' })
+  } catch (error) {
+    console.error('刪除預約失敗:', error)
+    return NextResponse.json(
+      { error: '刪除預約失敗' },
+      { status: 500 }
+    )
   }
 } 

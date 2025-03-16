@@ -1,53 +1,16 @@
-import { NextResponse, type NextRequest } from "next/server";
-import { z } from "zod";
-import { BookingSchema, QuerySchema, type Booking } from "@/types/schema";
+import { NextResponse } from "next/server";
+import connectDB from '@/lib/mongodb';
+import Booking from '@/models/Booking';
+import { startOfDay, addDays } from 'date-fns';
 
-// 模擬預約數據
-const MOCK_BOOKINGS: Record<string, Booking[]> = {
-  "1": [
-    {
-      date: "2024-03-20",
-      timeSlot: "09:00-10:00",
-      bookedBy: { name: "張小明", email: "ming@example.com" },
-    },
-    {
-      date: "2024-03-20",
-      timeSlot: "10:00-11:00",
-      bookedBy: { name: "李小華", email: "hua@example.com" },
-    },
-    {
-      date: "2024-03-21",
-      timeSlot: "14:00-15:00",
-      bookedBy: { name: "王大同", email: "tong@example.com" },
-    },
-  ],
-  "2": [
-    {
-      date: "2024-03-20",
-      timeSlot: "13:00-14:00",
-      bookedBy: { name: "陳小芳", email: "fang@example.com" },
-    },
-    {
-      date: "2024-03-21",
-      timeSlot: "15:00-16:00",
-      bookedBy: { name: "林小美", email: "mei@example.com" },
-    },
-  ],
-  "3": [
-    {
-      date: "2024-03-22",
-      timeSlot: "09:00-10:00",
-      bookedBy: { name: "黃小強", email: "strong@example.com" },
-    },
-  ],
-};
-
-export const GET = async (
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-): Promise<NextResponse> => {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = await params;
+    const { id } = params;
+    const url = new URL(request.url);
+    const dateParam = url.searchParams.get("date");
 
     if (!id) {
       return NextResponse.json(
@@ -55,9 +18,6 @@ export const GET = async (
         { status: 400 }
       );
     }
-
-    const url = new URL(request.url);
-    const dateParam = url.searchParams.get("date");
 
     if (dateParam) {
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -76,11 +36,8 @@ export const GET = async (
         );
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const maxDate = new Date();
-      maxDate.setDate(maxDate.getDate() + 30);
-      maxDate.setHours(23, 59, 59, 999);
+      const today = startOfDay(new Date());
+      const maxDate = addDays(today, 30);
 
       if (date < today) {
         return NextResponse.json(
@@ -97,29 +54,13 @@ export const GET = async (
       }
     }
 
-    const query = QuerySchema.parse({ date: dateParam });
-    const roomBookings = MOCK_BOOKINGS[id] || [];
-    const validatedBookings = z.array(BookingSchema).parse(roomBookings);
+    await connectDB();
+    const query = dateParam ? { roomId: id, date: dateParam } : { roomId: id };
+    const bookings = await Booking.find(query).sort({ date: 1, timeSlot: 1 });
 
-    const filteredBookings = query.date
-      ? validatedBookings.filter((booking) => booking.date === query.date)
-      : validatedBookings;
-
-    return NextResponse.json(filteredBookings);
+    return NextResponse.json(bookings);
   } catch (error) {
-    console.error("發生未預期的錯誤:", error);
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: "資料驗證失敗",
-          message: "請確認日期格式是否正確（YYYY-MM-DD）",
-          details: error.errors,
-        },
-        { status: 400 }
-      );
-    }
-
+    console.error("獲取預約狀態失敗:", error);
     return NextResponse.json(
       {
         error: "獲取預約狀態失敗",
@@ -128,4 +69,4 @@ export const GET = async (
       { status: 500 }
     );
   }
-};
+}

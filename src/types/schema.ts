@@ -35,16 +35,20 @@ export const CreateBookingSchema = z.object({
   bookedBy: BookerSchema
 });
 
-export const BookingStatusSchema = z.enum(['upcoming', 'completed', 'cancelled']);
+export const BookingStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 
 export const MyBookingSchema = z.object({
   id: z.string(),
   roomId: z.string(),
-  roomName: z.string().min(1, "會議室名稱不能為空"),
+  roomName: z.string(),
+  userId: z.string(),
+  userName: z.string(),
+  userEmail: z.string().email(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式必須為 YYYY-MM-DD"),
   timeSlot: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM"),
-  bookedBy: BookerSchema,
-  status: BookingStatusSchema
+  status: BookingStatusSchema,
+  createdAt: z.string().or(z.date()),
+  updatedAt: z.string().or(z.date())
 });
 
 export const MyBookingsSchema = z.array(MyBookingSchema);

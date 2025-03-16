@@ -26,9 +26,9 @@ const RoomCard = ({ id, name, capacity, imageUrl, facilities }: RoomCardProps) =
             <span>可容納 {capacity} 人</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {facilities.map((facility, index) => (
+            {facilities.map((facility) => (
               <span
-                key={index}
+                key={`${id}-${facility}`}
                 className="px-2 py-1 text-xs font-medium text-[#00d2be] bg-[#00d2be]/10 rounded-full"
               >
                 {facility}

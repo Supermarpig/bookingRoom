@@ -1,60 +1,54 @@
-import { NextResponse } from 'next/server';
-import { z } from 'zod';
-import { RoomsSchema, type Room } from '@/types/schema';
+import { NextResponse } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Room from "@/models/Room";
 
-// 模擬資料庫中的會議室數據
-const MOCK_ROOMS: Room[] = [
-  {
-    id: "1",
-    name: "大型會議室 A",
-    capacity: 20,
-    imageUrl: "https://picsum.photos/600/400?random=1",
-    facilities: ["投影機", "WiFi", "白板"],
-    description: "寬敞明亮的大型會議室，配備高清投影設備和完整的會議系統，適合舉辦大型會議、培訓或演講。",
-    location: "3樓 301室",
-    area: "50平方米",
-    hourlyRate: 1000,
-  },
-  {
-    id: "2",
-    name: "中型會議室 B",
-    capacity: 12,
-    imageUrl: "https://picsum.photos/600/400?random=2",
-    facilities: ["電視螢幕", "WiFi", "白板"],
-    description: "舒適實用的中型會議室，配備大型顯示器，適合小組會議和討論。",
-    location: "2樓 201室",
-    area: "30平方米",
-    hourlyRate: 800,
-  },
-  {
-    id: "3",
-    name: "小型會議室 C",
-    capacity: 6,
-    imageUrl: "https://picsum.photos/600/400?random=3",
-    facilities: ["WiFi", "白板"],
-    description: "溫馨簡約的小型會議室，適合小組討論和面試使用。",
-    location: "2樓 202室",
-    area: "15平方米",
-    hourlyRate: 500,
-  },
-];
-
+// 獲取所有會議室
 export async function GET() {
   try {
-    // 驗證所有會議室數據
-    const validatedRooms = RoomsSchema.parse(MOCK_ROOMS);
-    return NextResponse.json(validatedRooms);
+    await connectDB();
+    const rooms = await Room.find({}).sort({ createdAt: -1 });
+    // 轉換 _id 為 id
+    const formattedRooms = rooms.map(room => ({
+      id: room._id.toString(),
+      name: room.name,
+      capacity: room.capacity,
+      imageUrl: room.imageUrl,
+      facilities: room.facilities,
+      description: room.description,
+      location: room.location,
+      area: room.area,
+      hourlyRate: room.hourlyRate,
+    }));
+    return NextResponse.json(formattedRooms);
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "資料驗證失敗", details: error.errors },
-        { status: 400 }
-      );
-    }
-    
     return NextResponse.json(
-      { error: "獲取會議室列表失敗" },
+      { error: "獲取會議室列表失敗", errorMessage: error },
       { status: 500 }
     );
   }
-} 
+}
+
+// 創建新會議室
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    await connectDB();
+
+    const room = await Room.create(body);
+    const formattedRoom = {
+      id: room._id.toString(),
+      name: room.name,
+      capacity: room.capacity,
+      imageUrl: room.imageUrl,
+      facilities: room.facilities,
+      description: room.description,
+      location: room.location,
+      area: room.area,
+      hourlyRate: room.hourlyRate,
+    };
+    return NextResponse.json(formattedRoom);
+  } catch (error) {
+    console.error("創建會議室失敗:", error);
+    return NextResponse.json({ error: "創建會議室失敗" }, { status: 500 });
+  }
+}
