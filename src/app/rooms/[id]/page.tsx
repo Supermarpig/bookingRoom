@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,8 @@ export default function RoomDetailPage() {
   const { data: session } = useSession();
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [room, setRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfToday());
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
@@ -751,7 +753,7 @@ export default function RoomDetailPage() {
                 <Button
                   onClick={() => {
                     setIsLoginModalOpen(false);
-                    const currentPath = window.location.pathname + window.location.search;
+                    const currentPath = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
                     router.push(`/auth/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
                   }}
                   className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white"

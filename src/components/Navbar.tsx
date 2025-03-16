@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ import { LogOut, User, Menu } from "lucide-react";
 const Navbar = () => {
   const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <nav className="bg-white/80 backdrop-blur-md shadow-lg fixed w-full top-0 z-50">
@@ -53,7 +55,7 @@ const Navbar = () => {
             </Link>
             {!session ? (
               <Link
-                href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                href={`/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`}
                 className="bg-[#00d2be] hover:bg-[#00bfad] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 登入
@@ -162,7 +164,7 @@ const Navbar = () => {
                 <div className="p-4 border-t">
                   {!session ? (
                     <Link
-                      href={`/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`}
+                      href={`/auth/signin?callbackUrl=${encodeURIComponent(pathname)}`}
                       className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors inline-flex items-center justify-center"
                       onClick={() => setIsOpen(false)}
                     >
