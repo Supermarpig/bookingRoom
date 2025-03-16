@@ -13,6 +13,7 @@ import { type Room, type Booking } from "@/types/schema";
 import { cn } from "@/lib/utils";
 import { format, startOfToday, addDays } from "date-fns";
 import { zhTW } from "date-fns/locale";
+import { buttonVariants } from "@/components/ui/button";
 
 export default function RoomDetailPage() {
   const { data: session } = useSession();
@@ -45,7 +46,6 @@ export default function RoomDetailPage() {
 
   // 設定日期範圍
   const today = startOfToday();
-  const tomorrow = addDays(today, 1);
   const maxDate = addDays(today, 30);
 
   // 當 session 改變時，更新預約者資訊
@@ -351,12 +351,34 @@ export default function RoomDetailPage() {
                   selected={selectedDate}
                   onSelect={handleDateSelect}
                   locale={zhTW}
-                  fromDate={tomorrow}
+                  fromDate={today}
                   toDate={maxDate}
                   className="rounded-md border mx-auto bg-white"
                   classNames={{
-                    day_selected: "bg-[#00d2be] hover:bg-[#00bfad] text-white",
-                    day_today: "bg-accent text-accent-foreground",
+                    day_selected: "bg-[#00d2be] hover:bg-[#00bfad] text-white focus:bg-[#00d2be]",
+                    day_today: "bg-[#00d2be]/10 text-[#00d2be] font-bold hover:bg-[#00d2be] hover:text-white",
+                    day: cn(
+                      buttonVariants({ variant: "ghost" }),
+                      "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+                    ),
+                    day_disabled: "text-muted-foreground opacity-50",
+                    day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                    day_hidden: "invisible",
+                    nav_button: cn(
+                      buttonVariants({ variant: "outline" }),
+                      "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100"
+                    ),
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex",
+                    head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+                    row: "flex w-full mt-2",
+                    cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                    caption: "flex justify-center pt-1 relative items-center",
+                    caption_label: "text-sm font-medium",
+                    nav: "space-x-1 flex items-center",
+                    months: "space-y-4"
                   }}
                   initialFocus
                 />
@@ -389,8 +411,14 @@ export default function RoomDetailPage() {
                           {isBooked && booking && (
                             <div className="text-xs mt-1">
                               <span className="block text-red-500">已預約</span>
-                              <span className="block text-gray-500">預約者：{booking.bookedBy.name}</span>
-                              <span className="block text-gray-500 truncate">{booking.bookedBy.email}</span>
+                              {session?.user?.role === "ADMIN" ? (
+                                <>
+                                  <span className="block text-gray-500">預約者：{booking.userName}</span>
+                                  <span className="block text-gray-500 truncate">{booking.userEmail}</span>
+                                </>
+                              ) : (
+                                <span className="block text-gray-500">此時段已被預約</span>
+                              )}
                             </div>
                           )}
                         </div>

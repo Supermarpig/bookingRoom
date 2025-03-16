@@ -74,6 +74,8 @@ export async function GET(
       location: room.location,
       area: room.area,
       hourlyRate: room.hourlyRate,
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt
     };
 
     // 驗證會議室數據

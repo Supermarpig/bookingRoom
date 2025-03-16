@@ -6,6 +6,16 @@ export const BookerSchema = z.object({
   email: z.string().email("請輸入有效的電子郵件")
 });
 
+// 使用者相關 schemas
+export const UserSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  email: z.string().email().nullable(),
+  role: z.string().default("USER"),
+  createdAt: z.string().or(z.date()),
+  updatedAt: z.string().or(z.date())
+});
+
 // 會議室相關 schemas
 export const RoomSchema = z.object({
   id: z.string(),
@@ -17,27 +27,16 @@ export const RoomSchema = z.object({
   location: z.string().min(1, "位置不能為空"),
   area: z.string().min(1, "面積不能為空"),
   hourlyRate: z.number().positive("每小時收費必須為正數"),
+  createdAt: z.string().or(z.date()),
+  updatedAt: z.string().or(z.date())
 });
 
 export const RoomsSchema = z.array(RoomSchema);
 
 // 預約相關 schemas
-export const BookingSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式必須為 YYYY-MM-DD"),
-  timeSlot: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM"),
-  bookedBy: BookerSchema
-});
-
-export const CreateBookingSchema = z.object({
-  roomId: z.string().min(1, "會議室ID不能為空"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式必須為 YYYY-MM-DD"),
-  timeSlot: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM"),
-  bookedBy: BookerSchema
-});
-
 export const BookingStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED"]);
 
-export const MyBookingSchema = z.object({
+export const BookingSchema = z.object({
   id: z.string(),
   roomId: z.string(),
   roomName: z.string(),
@@ -47,10 +46,19 @@ export const MyBookingSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式必須為 YYYY-MM-DD"),
   timeSlot: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM"),
   status: BookingStatusSchema,
+  note: z.string().default(""),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date())
 });
 
+export const CreateBookingSchema = z.object({
+  roomId: z.string().min(1, "會議室ID不能為空"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "日期格式必須為 YYYY-MM-DD"),
+  timeSlot: z.string().regex(/^\d{2}:\d{2}-\d{2}:\d{2}$/, "時段格式必須為 HH:MM-HH:MM"),
+  bookedBy: BookerSchema
+});
+
+export const MyBookingSchema = BookingSchema;
 export const MyBookingsSchema = z.array(MyBookingSchema);
 
 // API 參數相關 schemas
@@ -67,6 +75,7 @@ export const DeleteQuerySchema = z.object({
 });
 
 // 類型定義
+export type User = z.infer<typeof UserSchema>;
 export type Room = z.infer<typeof RoomSchema>;
 export type Rooms = z.infer<typeof RoomsSchema>;
 export type Booker = z.infer<typeof BookerSchema>;
