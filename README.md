@@ -1,183 +1,164 @@
 # 會議室預約系統
 
-這是一個現代化的會議室預約系統，提供直觀的使用者介面和完整的預約管理功能。
+這是一個現代化的會議室預約系統，提供直觀的使用者介面和完整的預約管理功能。使用 Next.js 14 和 TypeScript 開發，並整合了現代化的 UI 組件。
 
 ## 功能特點
 
-1. 會議室列表
+1. 會議室管理
 
-   - 顯示所有可用的會議室
-   - 每個會議室卡片顯示基本資訊
-   - 使用隨機圖片增加視覺吸引力
+   - 完整的會議室列表展示
+   - 詳細的會議室資訊（位置、容納人數、設施配備等）
+   - 高質量的會議室圖片展示
+   - 即時的預約狀態顯示
 
-2. 會議室詳情
+2. 預約系統
 
-   - 完整的會議室資訊展示
-   - 設施配備清單
-   - 容納人數和收費標準
+   - 直觀的日期選擇（支援 30 天內預約）
+   - 彈性的時段選擇（全天 24 小時時段）
    - 即時預約狀態查詢
+   - 預約確認和取消功能
 
-3. 預約功能
+3. 使用者系統
 
-   - 選擇預約日期（最多可預約 30 天內的時段）
-   - 選擇預約時段（09:00-17:00，每小時一個時段）
-   - 顯示已預約時段和預約者資訊
-   - 預約成功後顯示確認訊息
+   - 會員註冊和登入
+   - 個人預約管理
+   - 預約歷史記錄查看
+   - 管理員專用功能
 
-4. 我的預約
-   - 查看個人所有預約記錄
-   - 預約狀態追蹤（即將到來、已完成、已取消）
-   - 取消預約功能
-   - 預約詳細資訊查看
+4. 介面設計
+   - 響應式設計，支援各種裝置
+   - 現代化的 UI/UX 設計
+   - 無障礙設計支援
+   - 直觀的操作流程
 
 ## 技術架構
 
-- 前端框架：Next.js 14
-- UI 框架：Tailwind CSS
-- 狀態管理：React Hooks
-- API 路由：Next.js API Routes
-- 程式碼規範：ESLint + TypeScript
+### 前端技術
 
-## 操作流程
+- Next.js 15.2.2
+- React 19.0.0
+- TypeScript
+- Tailwind CSS
+- Shadcn/ui 組件庫
 
-### 預約會議室
+### 後端技術
 
-1. 在首頁瀏覽會議室列表
-2. 點擊感興趣的會議室進入詳情頁
-3. 在詳情頁填寫預約資訊：
-   - 輸入預約者姓名
-   - 輸入電子郵件
-   - 選擇預約日期
-   - 選擇預約時段
-4. 點擊「立即預約」按鈕
-5. 確認預約成功訊息
+- Next.js API Routes
+- MongoDB 資料庫
+- NextAuth.js 身份驗證
 
-### 查看和管理預約
+### 開發工具
 
-1. 點擊導航欄的「我的預約」
-2. 查看所有預約記錄，包含：
-   - 會議室名稱
-   - 預約日期和時段
-   - 預約狀態
-   - 預約者資訊
-3. 對於即將到來的預約：
-   - 可以點擊「取消預約」
-   - 確認取消操作
-   - 查看更新後的預約列表
+- ESLint
+- TypeScript
+- PNPM 套件管理器
 
-### 預約狀態說明
+## 開始使用
 
-- 即將到來（藍色）：尚未進行的預約
-- 已完成（綠色）：已使用的預約
-- 已取消（紅色）：已取消的預約
-
-## 開發說明
-
-### 安裝依賴
+1. 安裝依賴：
 
 ```bash
-npm install
+pnpm install
 ```
 
-### 開發環境運行
+2. 設定環境變數：
+   建立 `.env.local` 檔案並設定以下變數：
+
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_secret_key
+MONGODB_URI=your_mongodb_uri
+```
+
+3. 啟動開發伺服器：
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-### 檢查程式碼規範
+4. 開啟瀏覽器訪問 [http://localhost:3000](http://localhost:3000)
 
-```bash
-# 檢查 ESLint 錯誤
-npm run lint
+## 部署說明
 
-# 自動修復 ESLint 錯誤
-npm run lint:fix
+本專案可以輕鬆部署到 Vercel 平台：
+
+1. Fork 本專案到你的 GitHub
+2. 在 Vercel 中導入專案
+3. 設定環境變數
+4. 部署完成
+
+## 系統需求
+
+- Node.js 18.0 或更高版本
+- PNPM 8.0 或更高版本
+- MongoDB 4.4 或更高版本
+
+## 專案結構
+
+```
+booking-room/
+├── src/
+│   ├── app/                 # Next.js 13+ App Router
+│   ├── components/          # React 組件
+│   ├── lib/                 # 工具函數和共用邏輯
+│   └── types/              # TypeScript 型別定義
+├── public/                  # 靜態資源
+└── package.json            # 專案配置
 ```
 
-### 生產環境建置
+## 開發指南
 
-```bash
-npm run build
+### 程式碼規範
+
+- 使用 ESLint 進行程式碼品質控制
+- 遵循 TypeScript 嚴格模式
+- 使用 Prettier 進行程式碼格式化
+
+### 提交規範
+
+提交訊息格式：
+
+```
+<type>: <description>
+
+[optional body]
 ```
 
-### 生產環境運行
+Type 類型：
 
-```bash
-npm start
-```
+- feat: 新功能
+- fix: 錯誤修復
+- docs: 文件更新
+- style: 程式碼格式修改
+- refactor: 重構
+- test: 測試相關
+- chore: 建置過程或輔助工具的變動
 
-## ESLint 規範說明
+## 授權協議
 
-為確保程式碼品質，本專案使用 ESLint 進行程式碼規範檢查。主要規範包括：
+本專案採用 MIT 授權協議。詳見 [LICENSE](LICENSE) 檔案。
 
-1. TypeScript 相關規則
+## 貢獻指南
 
-   - 強制使用型別定義
-   - 避免使用 `any` 型別
-   - 確保正確的型別推導
+1. Fork 本專案
+2. 建立特性分支
+3. 提交變更
+4. 發起 Pull Request
 
-2. React 相關規則
+歡迎任何形式的貢獻，包括但不限於：
 
-   - 強制使用 React Hooks 的依賴陣列
-   - 確保 key prop 的正確使用
-   - 避免不必要的重新渲染
+- 功能改進
+- 錯誤修復
+- 文件更新
+- 使用者介面優化
 
-3. 程式碼風格規則
+## 聯絡方式
 
-   - 一致的縮排和空格使用
-   - 一致的引號使用
-   - 一致的分號使用
+如有任何問題或建議，歡迎透過以下方式聯繫：
 
-4. 最佳實踐
-   - 避免未使用的變數
-   - 避免重複的 import
-   - 確保適當的錯誤處理
-
-## 常見 ESLint 錯誤處理
-
-1. 未使用的變數
-
-   ```typescript
-   // 錯誤
-   const unused = "value";
-
-   // 正確
-   const used = "value";
-   console.log(used);
-   ```
-
-2. 缺少依賴陣列
-
-   ```typescript
-   // 錯誤
-   useEffect(() => {
-     fetchData(id);
-   }, []); // 缺少 id 依賴
-
-   // 正確
-   useEffect(() => {
-     fetchData(id);
-   }, [id]);
-   ```
-
-3. 型別定義
-
-   ```typescript
-   // 錯誤
-   const data = [];
-
-   // 正確
-   const data: string[] = [];
-   ```
-
-## 注意事項
-
-1. 預約時段為每小時一個時段，從早上 9 點到下午 5 點
-2. 只能預約未來 30 天內的時段
-3. 不能預約已被他人預約的時段
-4. 可以查看預約時段的預約者資訊
-5. 只能取消「即將到來」的預約
+- 提交 Issue
+- 發起 Pull Request
+- 電子郵件：[your-email@example.com]
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

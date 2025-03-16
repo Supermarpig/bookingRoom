@@ -1,5 +1,6 @@
 import { getProviders } from "next-auth/react";
 import SignInButtons from "./SignInButtons";
+import { Suspense } from "react";
 
 export default async function SignIn() {
   const providers = await getProviders();
@@ -12,7 +13,9 @@ export default async function SignIn() {
           <p className="mt-2 text-sm text-gray-600">請選擇登入方式</p>
         </div>
         <div className="mt-8 space-y-4">
-          <SignInButtons providers={providers} />
+          <Suspense fallback={<div>載入中...</div>}>
+            <SignInButtons providers={providers} />
+          </Suspense>
         </div>
       </div>
     </div>
