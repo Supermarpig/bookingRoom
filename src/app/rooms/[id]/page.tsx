@@ -27,7 +27,7 @@ export default function RoomDetailPage() {
   const params = useParams();
   const router = useRouter();
   const [room, setRoom] = useState<Room | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfToday());
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
   const [bookerName, setBookerName] = useState("");
   const [bookerEmail, setBookerEmail] = useState("");
