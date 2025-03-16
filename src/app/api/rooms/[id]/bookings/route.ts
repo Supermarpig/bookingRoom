@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
-import connectDB from '@/lib/mongodb';
-import Booking from '@/models/Booking';
-import { startOfDay, addDays } from 'date-fns';
+import type { NextRequest } from "next/server";
+import connectDB from "@/lib/mongodb";
+import Booking from "@/models/Booking";
+import { startOfDay, addDays } from "date-fns";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { params } = context;
+    const { id } = await params;
     const url = new URL(request.url);
     const dateParam = url.searchParams.get("date");
 

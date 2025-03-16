@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
@@ -9,53 +10,46 @@ import { z } from "zod";
 // 更新預約狀態的請求體驗證
 const UpdateBookingSchema = z.object({
   status: BookingStatusSchema,
-  note: z.string().optional()
+  note: z.string().optional(),
 });
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "未授權訪問" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "未授權訪問" }, { status: 401 });
     }
 
     // 檢查是否為管理員
     if (session.user.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "沒有權限訪問" },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "沒有權限訪問" }, { status: 403 });
     }
 
     const body = await request.json();
-    
+
     // 驗證請求體
     const validatedData = UpdateBookingSchema.parse(body);
 
     await connectDB();
-    
+
+    const { id } = await params;
+
     // 查找並更新預約
     const booking = await Booking.findByIdAndUpdate(
-      params.id,
+      id,
       {
         status: validatedData.status,
-        ...(validatedData.note && { note: validatedData.note })
+        ...(validatedData.note && { note: validatedData.note }),
       },
       { new: true }
     );
 
     if (!booking) {
-      return NextResponse.json(
-        { error: "找不到指定的預約" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "找不到指定的預約" }, { status: 404 });
     }
 
     // 格式化回傳資料
@@ -71,7 +65,7 @@ export async function PATCH(
       status: booking.status,
       note: booking.note,
       createdAt: booking.createdAt,
-      updatedAt: booking.updatedAt
+      updatedAt: booking.updatedAt,
     };
 
     return NextResponse.json(formattedBooking);
@@ -84,9 +78,6 @@ export async function PATCH(
     }
 
     console.error("更新預約狀態失敗:", error);
-    return NextResponse.json(
-      { error: "更新預約狀態失敗" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "更新預約狀態失敗" }, { status: 500 });
   }
-} 
+}
