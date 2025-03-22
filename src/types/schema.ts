@@ -11,6 +11,7 @@ export const UserSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   email: z.string().email().nullable(),
+  image: z.string().url("必須是有效的圖片URL").nullable(),
   role: z.string().default("USER"),
   createdAt: z.string().or(z.date()),
   updatedAt: z.string().or(z.date())
@@ -82,7 +83,16 @@ export const DeleteQuerySchema = z.object({
 });
 
 // 類型定義
-export type User = z.infer<typeof UserSchema>;
+export type User = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  role: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+};
+
 export type Room = z.infer<typeof RoomSchema>;
 export type Rooms = z.infer<typeof RoomsSchema>;
 export type Booker = z.infer<typeof BookerSchema>;
