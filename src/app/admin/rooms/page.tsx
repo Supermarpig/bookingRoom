@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { type Room } from "@/types/schema";
+import { getRooms } from "@/actions/room/get-rooms";
+import { deleteRoom } from "@/actions/room/delete-room";
 
 export default function AdminRoomsPage() {
   const router = useRouter();
@@ -37,14 +39,10 @@ export default function AdminRoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch("/api/rooms");
-      if (!response.ok) {
-        throw new Error("獲取會議室列表失敗");
-      }
-      const data = await response.json();
+      const data = await getRooms();
       setRooms(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "發生未知錯誤");
+      setError(err instanceof Error ? err.message : "獲取會議室列表失敗");
     } finally {
       setLoading(false);
     }
@@ -52,20 +50,11 @@ export default function AdminRoomsPage() {
 
   const handleDelete = async (roomId: string) => {
     try {
-      const response = await fetch(`/api/rooms/${roomId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("刪除會議室失敗");
-      }
-
+      await deleteRoom(roomId);
       toast.success("會議室已成功刪除");
       fetchRooms();
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "刪除會議室時發生錯誤"
-      );
+      toast.error(error instanceof Error ? error.message : "刪除會議室時發生錯誤");
     }
   };
 

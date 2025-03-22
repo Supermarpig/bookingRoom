@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import { type MyBooking } from "@/types/schema";
+import { getMyBookings } from "@/actions/booking/get-my-bookings";
+import { deleteBooking } from "@/actions/room/delete-booking";
 
 export default function MyBookingsPage() {
   const { status } = useSession();
@@ -26,11 +28,7 @@ export default function MyBookingsPage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch("/api/bookings");
-      if (!response.ok) {
-        throw new Error("獲取預約記錄失敗");
-      }
-      const data = await response.json();
+      const data = await getMyBookings();
       setBookings(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "獲取預約記錄失敗");
@@ -43,13 +41,7 @@ export default function MyBookingsPage() {
     if (!selectedBookingId) return;
 
     try {
-      const response = await fetch(`/api/bookings/${selectedBookingId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("取消預約失敗");
-      }
+      await deleteBooking(selectedBookingId);
 
       // 重新獲取預約列表
       await fetchBookings();

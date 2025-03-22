@@ -8,6 +8,8 @@ import { zhTW } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, MapPin, Circle } from "lucide-react";
+import { getRooms } from "@/actions/room/get-rooms";
+import { getTodayBookings } from "@/actions/room/get-today-bookings";
 
 interface RoomStatus {
   id: string;
@@ -30,12 +32,30 @@ export default function Home() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await fetch("/api/rooms/today");
-        if (!response.ok) {
-          throw new Error("獲取會議室狀態失敗");
-        }
-        const data = await response.json();
-        setRooms(data);
+        // 並行獲取會議室和預約狀態
+        const [roomsData, bookingsData] = await Promise.all([
+          getRooms(),
+          getTodayBookings()
+        ]);
+
+        // 整理資料
+        const roomsWithStatus = roomsData.map(room => ({
+          id: room.id,
+          name: room.name,
+          imageUrl: room.imageUrl,
+          location: room.location,
+          capacity: room.capacity,
+          area: room.area,
+          bookings: (bookingsData.bookings[room.id] || []).map(booking => ({
+            timeSlot: booking.timeSlot,
+            status: booking.status === "APPROVED" ? "booked" : "available"
+          })),
+          availableSlots: room.availableTimeSlots.length - (bookingsData.bookings[room.id] || [])
+            .filter(booking => booking.status === "APPROVED")
+            .length
+        }));
+
+        setRooms(roomsWithStatus);
       } catch (error) {
         console.error("Error fetching rooms:", error);
       } finally {

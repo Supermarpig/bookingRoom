@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import { type Booking } from "@/types/schema";
+import { updateBooking } from "@/actions/room/update-booking";
+import { getAllBookings } from "@/actions/room/get-all-bookings";
 
 export default function AdminBookingsPage() {
   const { data: session, status } = useSession();
@@ -32,11 +34,7 @@ export default function AdminBookingsPage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch("/api/admin/bookings");
-      if (!response.ok) {
-        throw new Error("獲取預約記錄失敗");
-      }
-      const data = await response.json();
+      const data = await getAllBookings();
       
       // 自動審核邏輯
       for (const booking of data) {
@@ -53,19 +51,18 @@ export default function AdminBookingsPage() {
           // 自動核准或拒絕
           const newStatus = conflictingBooking ? "REJECTED" : "APPROVED";
           
-          await fetch(`/api/admin/bookings/${booking.id}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ status: newStatus }),
+          await updateBooking({
+            id: booking.id,
+            status: newStatus,
+            note: conflictingBooking 
+              ? "該時段已有其他預約" 
+              : "系統自動核准"
           });
         }
       }
 
       // 重新獲取更新後的預約記錄
-      const updatedResponse = await fetch("/api/admin/bookings");
-      const updatedData = await updatedResponse.json();
+      const updatedData = await getAllBookings();
       setBookings(updatedData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "獲取預約記錄失敗");
@@ -78,17 +75,13 @@ export default function AdminBookingsPage() {
     if (!selectedBooking || !actionType) return;
 
     try {
-      const response = await fetch(`/api/admin/bookings/${selectedBooking.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: actionType }),
+      await updateBooking({
+        id: selectedBooking.id,
+        status: actionType,
+        note: actionType === "APPROVED" 
+          ? "管理員手動核准" 
+          : "管理員手動拒絕"
       });
-
-      if (!response.ok) {
-        throw new Error("操作失敗");
-      }
 
       await fetchBookings();
       setIsActionModalOpen(false);

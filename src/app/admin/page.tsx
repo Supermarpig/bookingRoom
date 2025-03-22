@@ -10,22 +10,14 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-
-interface ExtendedUser {
-  id: string;
-  name?: string | null;
-  email?: string | null;
-  role?: string;
-}
+import { toast } from "sonner";
+import { getStats } from "@/actions/admin/get-stats";
+import type { AdminStats } from "@/actions/admin/get-stats";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [stats, setStats] = useState({
-    todayBookings: 0,
-    totalRooms: 0,
-    pendingBookings: 0,
-  });
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,8 +25,7 @@ export default function AdminDashboard() {
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/admin")}`);
     } else if (status === "authenticated") {
       // 檢查是否為管理員
-      const user = session?.user as ExtendedUser;
-      if (user?.role !== "ADMIN") {
+      if (session?.user?.role !== "ADMIN") {
         router.push("/");
         return;
       }
@@ -44,14 +35,12 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch("/api/admin/stats");
-      if (!response.ok) {
-        throw new Error("獲取統計數據失敗");
-      }
-      const data = await response.json();
+      setLoading(true);
+      const data = await getStats();
       setStats(data);
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      console.error("獲取統計資料失敗:", error);
+      toast.error(error instanceof Error ? error.message : "獲取統計資料失敗");
     } finally {
       setLoading(false);
     }
@@ -166,19 +155,19 @@ export default function AdminDashboard() {
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-600">今日預約</CardTitle>
-                <p className="text-3xl font-bold text-[#00d2be]">{stats.todayBookings}</p>
+                <p className="text-3xl font-bold text-[#00d2be]">{stats?.todayBookings || 0}</p>
               </CardHeader>
             </Card>
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-600">會議室總數</CardTitle>
-                <p className="text-3xl font-bold text-[#00d2be]">{stats.totalRooms}</p>
+                <p className="text-3xl font-bold text-[#00d2be]">{stats?.totalRooms || 0}</p>
               </CardHeader>
             </Card>
             <Card className="bg-white">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-600">待審核預約</CardTitle>
-                <p className="text-3xl font-bold text-[#00d2be]">{stats.pendingBookings}</p>
+                <p className="text-3xl font-bold text-[#00d2be]">{stats?.pendingBookings || 0}</p>
               </CardHeader>
             </Card>
           </div>

@@ -2,27 +2,32 @@
 
 import { useState, useEffect } from "react";
 import RoomCard from "@/components/RoomCard";
-import { type Room } from "@/types/schema";
+import { type Room, type Booking } from "@/types/schema";
+import { getRooms } from "@/actions/room/get-rooms";
+import { getTodayBookings } from "@/actions/room/get-today-bookings";
 
 export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [todayBookings, setTodayBookings] = useState<Record<string, Booking[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCapacity, setSelectedCapacity] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchRooms();
+    fetchRoomsAndBookings();
   }, []);
 
-  const fetchRooms = async () => {
+  const fetchRoomsAndBookings = async () => {
     try {
-      const response = await fetch("/api/rooms");
-      if (!response.ok) {
-        throw new Error("獲取會議室列表失敗");
-      }
-      const data = await response.json();
-      setRooms(data);
+      // 並行獲取會議室和預約狀態
+      const [roomsData, bookingsData] = await Promise.all([
+        getRooms(),
+        getTodayBookings()
+      ]);
+
+      setRooms(roomsData);
+      setTodayBookings(bookingsData.bookings);
     } catch (err) {
       setError(err instanceof Error ? err.message : "發生未知錯誤");
     } finally {
@@ -97,7 +102,11 @@ export default function RoomsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRooms.map((room) => (
-            <RoomCard key={room.id} {...room} />
+            <RoomCard 
+              key={room.id} 
+              {...room} 
+              bookings={todayBookings[room.id] || []}
+            />
           ))}
         </div>
       )}

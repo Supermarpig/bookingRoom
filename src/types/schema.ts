@@ -59,6 +59,12 @@ export const CreateBookingSchema = z.object({
   bookedBy: BookerSchema
 });
 
+export const UpdateBookingSchema = z.object({
+  id: z.string().min(1, "預約 ID 不能為空"),
+  status: BookingStatusSchema,
+  note: z.string().optional(),
+});
+
 export const MyBookingSchema = BookingSchema;
 export const MyBookingsSchema = z.array(MyBookingSchema);
 
@@ -82,6 +88,7 @@ export type Rooms = z.infer<typeof RoomsSchema>;
 export type Booker = z.infer<typeof BookerSchema>;
 export type Booking = z.infer<typeof BookingSchema>;
 export type CreateBooking = z.infer<typeof CreateBookingSchema>;
+export type UpdateBooking = z.infer<typeof UpdateBookingSchema>;
 export type BookingStatus = z.infer<typeof BookingStatusSchema>;
 export type MyBooking = z.infer<typeof MyBookingSchema>;
 export type MyBookings = z.infer<typeof MyBookingsSchema>; 

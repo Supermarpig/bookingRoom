@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import type { Booking, BookingStatus } from "@/types/booking"
+import type { Booking, BookingStatus } from "@/types/schema"
 import { format } from "date-fns"
 import { zhTW } from 'date-fns/locale'
 import { Button } from "@/components/ui/button"
@@ -13,22 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal, Check, X } from "lucide-react"
 import { toast } from "sonner"
-
-async function updateBookingStatus(id: string, status: BookingStatus) {
-  const response = await fetch(`/api/bookings/${id}`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ status }),
-  })
-
-  if (!response.ok) {
-    throw new Error('更新預約狀態失敗')
-  }
-
-  return response.json()
-}
+import { updateBookingStatus } from "@/actions/booking/update-status"
 
 // 建立一個可重用的狀態更新按鈕組件
 function BookingActions({ booking, onSuccess }: { booking: Booking, onSuccess: () => void }) {
@@ -39,8 +24,8 @@ function BookingActions({ booking, onSuccess }: { booking: Booking, onSuccess: (
       await updateBookingStatus(booking.id, status)
       toast.success('更新成功')
       onSuccess()
-    } catch {
-      toast.error('更新失敗')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '更新失敗')
     }
   }
 

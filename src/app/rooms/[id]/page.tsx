@@ -11,16 +11,19 @@ import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { type Room, type Booking } from "@/types/schema";
 import { cn } from "@/lib/utils";
 import { format, startOfToday, addDays } from "date-fns";
 import { zhTW } from "date-fns/locale";
 import { buttonVariants } from "@/components/ui/button";
+import { createBooking } from "@/actions/room/create-booking";
+import { getBookings } from "@/actions/room/get-bookings";
+import { getRoom } from "@/actions/room/get-room";
 
 export default function RoomDetailPage() {
   const { data: session } = useSession();
@@ -30,7 +33,7 @@ export default function RoomDetailPage() {
   const searchParams = useSearchParams();
   const [room, setRoom] = useState<Room | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(startOfToday());
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [bookerName, setBookerName] = useState("");
   const [bookerEmail, setBookerEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -74,12 +77,9 @@ export default function RoomDetailPage() {
 
   const fetchRoomDetails = useCallback(async () => {
     try {
-      const response = await fetch(`/api/rooms/${params.id}`);
-      if (!response.ok) {
-        throw new Error("獲取會議室詳情失敗");
-      }
-      const data = await response.json();
-      setRoom(data);
+      const room = await getRoom(params.id as string);
+      setRoom(room);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "找不到指定的會議室");
     } finally {
@@ -95,19 +95,11 @@ export default function RoomDetailPage() {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       // console.log("發送請求的日期:", formattedDate);
 
-      const response = await fetch(
-        `/api/rooms/${params.id}/bookings?date=${formattedDate}`
-      );
+      const bookings = await getBookings({
+        roomId: params.id as string,
+        date: formattedDate,
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        // console.error("API 錯誤回應:", errorData);
-        throw new Error(
-          errorData.message || errorData.error || "獲取預約狀態失敗"
-        );
-      }
-
-      const bookings: Booking[] = await response.json();
       console.log("收到的預約資料:", bookings);
       setBookedSlots(bookings);
       setError(null); // 清除之前的錯誤
@@ -127,7 +119,7 @@ export default function RoomDetailPage() {
   useEffect(() => {
     if (selectedDate) {
       // console.log("日期已選擇，正在獲取預約狀態...");
-      setSelectedTimeSlot(""); // 當日期改變時，清空已選時段
+      setSelectedTimeSlots([]); // 當日期改變時，清空已選時段
       fetchBookingStatus();
     } else {
       // console.log("未選擇日期");
@@ -140,19 +132,48 @@ export default function RoomDetailPage() {
     setSelectedDate(date);
   };
 
+  const handleTimeSlotClick = (slot: string) => {
+    if (!session?.user) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    
+    setSelectedTimeSlots(prev => {
+      if (prev.includes(slot)) {
+        return prev.filter(s => s !== slot);
+      } else {
+        // 檢查是否為連續時段
+        const newSlots = [...prev, slot].sort();
+        if (newSlots.length > 1) {
+          const isConsecutive = newSlots.every((slot, index) => {
+            if (index === 0) return true;
+            const prevHour = parseInt(newSlots[index - 1].split(':')[0]);
+            const currentHour = parseInt(slot.split(':')[0]);
+            return currentHour - prevHour === 1;
+          });
+          
+          if (!isConsecutive) {
+            alert('請選擇連續的時段');
+            return prev;
+          }
+        }
+        return newSlots;
+      }
+    });
+  };
+
   const handleBooking = async () => {
     if (!session?.user) {
       setIsLoginModalOpen(true);
       return;
     }
 
-    // 設置所有欄位為已觸碰
     setTouched({
       name: true,
       email: true,
     });
 
-    if (!selectedDate || !selectedTimeSlot) {
+    if (!selectedDate || selectedTimeSlots.length === 0) {
       alert("請選擇預約日期和時段");
       return;
     }
@@ -166,29 +187,21 @@ export default function RoomDetailPage() {
     }
 
     try {
-      const response = await fetch("/api/bookings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          roomId: params.id,
+      // 為每個選擇的時段創建預約
+      for (const timeSlot of selectedTimeSlots) {
+        await createBooking({
+          roomId: params.id as string,
           date: format(selectedDate, "yyyy-MM-dd"),
-          timeSlot: selectedTimeSlot,
+          timeSlot: timeSlot,
           bookedBy: {
             name: bookerName,
             email: bookerEmail,
           },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || "預約失敗");
+        });
       }
 
-      await response.json();
       setIsSuccessModalOpen(true);
+      fetchBookingStatus();
     } catch (err) {
       alert(err instanceof Error ? err.message : "預約失敗");
     }
@@ -198,7 +211,7 @@ export default function RoomDetailPage() {
     setIsSuccessModalOpen(false);
     // 清空表單
     setSelectedDate(undefined);
-    setSelectedTimeSlot("");
+    setSelectedTimeSlots([]);
     setBookerName("");
     setBookerEmail("");
     // 重置觸碰狀態
@@ -448,19 +461,13 @@ export default function RoomDetailPage() {
                         {dawnSlots.map((slot) => {
                           const booking = bookedSlots.find((b) => b.timeSlot === slot);
                           const isBooked = Boolean(booking);
-                          const isSelected = selectedTimeSlot === slot;
+                          const isSelected = selectedTimeSlots.includes(slot);
                           return (
                             <Button
                               key={slot}
                               variant={isSelected ? "default" : "outline"}
                               disabled={isBooked || !selectedDate}
-                              onClick={() => {
-                                if (!session?.user) {
-                                  setIsLoginModalOpen(true);
-                                  return;
-                                }
-                                setSelectedTimeSlot(slot);
-                              }}
+                              onClick={() => handleTimeSlotClick(slot)}
                               className={cn(
                                 "h-auto py-2 relative",
                                 isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
@@ -505,19 +512,13 @@ export default function RoomDetailPage() {
                         {morningSlots.map((slot) => {
                           const booking = bookedSlots.find((b) => b.timeSlot === slot);
                           const isBooked = Boolean(booking);
-                          const isSelected = selectedTimeSlot === slot;
+                          const isSelected = selectedTimeSlots.includes(slot);
                           return (
                             <Button
                               key={slot}
                               variant={isSelected ? "default" : "outline"}
                               disabled={isBooked || !selectedDate}
-                              onClick={() => {
-                                if (!session?.user) {
-                                  setIsLoginModalOpen(true);
-                                  return;
-                                }
-                                setSelectedTimeSlot(slot);
-                              }}
+                              onClick={() => handleTimeSlotClick(slot)}
                               className={cn(
                                 "h-auto py-2 relative",
                                 isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
@@ -562,19 +563,13 @@ export default function RoomDetailPage() {
                         {afternoonSlots.map((slot) => {
                           const booking = bookedSlots.find((b) => b.timeSlot === slot);
                           const isBooked = Boolean(booking);
-                          const isSelected = selectedTimeSlot === slot;
+                          const isSelected = selectedTimeSlots.includes(slot);
                           return (
                             <Button
                               key={slot}
                               variant={isSelected ? "default" : "outline"}
                               disabled={isBooked || !selectedDate}
-                              onClick={() => {
-                                if (!session?.user) {
-                                  setIsLoginModalOpen(true);
-                                  return;
-                                }
-                                setSelectedTimeSlot(slot);
-                              }}
+                              onClick={() => handleTimeSlotClick(slot)}
                               className={cn(
                                 "h-auto py-2 relative",
                                 isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
@@ -619,19 +614,13 @@ export default function RoomDetailPage() {
                         {eveningSlots.map((slot) => {
                           const booking = bookedSlots.find((b) => b.timeSlot === slot);
                           const isBooked = Boolean(booking);
-                          const isSelected = selectedTimeSlot === slot;
+                          const isSelected = selectedTimeSlots.includes(slot);
                           return (
                             <Button
                               key={slot}
                               variant={isSelected ? "default" : "outline"}
                               disabled={isBooked || !selectedDate}
-                              onClick={() => {
-                                if (!session?.user) {
-                                  setIsLoginModalOpen(true);
-                                  return;
-                                }
-                                setSelectedTimeSlot(slot);
-                              }}
+                              onClick={() => handleTimeSlotClick(slot)}
                               className={cn(
                                 "h-auto py-2 relative",
                                 isBooked && "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200",
@@ -674,7 +663,7 @@ export default function RoomDetailPage() {
                 className="w-full bg-[#00d2be] hover:bg-[#00bfad] text-white"
                 disabled={
                   !selectedDate ||
-                  !selectedTimeSlot ||
+                  selectedTimeSlots.length === 0 ||
                   !bookerName ||
                   !bookerEmail
                 }
@@ -690,7 +679,7 @@ export default function RoomDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>預約成功</DialogTitle>
-            <DialogDescription>
+            <DialogDescription asChild>
               <div className="text-center">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
                   <svg
@@ -715,7 +704,7 @@ export default function RoomDetailPage() {
                     日期：
                     {selectedDate ? format(selectedDate, "yyyy-MM-dd") : ""}
                   </p>
-                  <p>時段：{selectedTimeSlot}</p>
+                  <p>時段：{selectedTimeSlots.join(", ")}</p>
                 </div>
               </div>
             </DialogDescription>
@@ -732,7 +721,7 @@ export default function RoomDetailPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>需要登入</DialogTitle>
-            <DialogDescription>
+            <DialogDescription asChild>
               <div className="text-center">
                 <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 mb-4">
                   <svg

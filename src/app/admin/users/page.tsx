@@ -5,13 +5,15 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import { type User } from "@/types/schema";
+import { getUsers } from "@/actions/admin/get-users";
+import { updateUser } from "@/actions/admin/update-user";
+import { toast } from "sonner";
 
 export default function AdminUsersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [actionType, setActionType] = useState<"PROMOTE" | "DEMOTE" | null>(null);
@@ -31,14 +33,12 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users");
-      if (!response.ok) {
-        throw new Error("獲取用戶列表失敗");
-      }
-      const data = await response.json();
-      setUsers(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "獲取用戶列表失敗");
+      setLoading(true);
+      const users = await getUsers();
+      setUsers(users);
+    } catch (error) {
+      console.error("獲取用戶列表失敗:", error);
+      toast.error(error instanceof Error ? error.message : "獲取用戶列表失敗");
     } finally {
       setLoading(false);
     }
@@ -48,26 +48,23 @@ export default function AdminUsersPage() {
     if (!selectedUser || !actionType) return;
 
     try {
-      const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          role: actionType === "PROMOTE" ? "ADMIN" : "USER",
-        }),
-      });
+      await updateUser(
+        selectedUser.id,
+        actionType === "PROMOTE" ? "ADMIN" : "USER"
+      );
 
-      if (!response.ok) {
-        throw new Error("操作失敗");
-      }
+      toast.success(
+        actionType === "PROMOTE"
+          ? "已成功將用戶設為管理員"
+          : "已成功移除用戶的管理員權限"
+      );
 
       await fetchUsers();
       setIsActionModalOpen(false);
       setSelectedUser(null);
       setActionType(null);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "操作失敗");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "操作失敗");
     }
   };
 
@@ -81,14 +78,6 @@ export default function AdminUsersPage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00d2be]"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-red-500">{error}</div>
       </div>
     );
   }
