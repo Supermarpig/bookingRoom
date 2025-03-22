@@ -1,7 +1,7 @@
 'use server'
 
 import { getServerSession } from "next-auth";
-import { format, startOfDay, endOfDay } from "date-fns";
+import { format } from "date-fns";
 import connectDB from "@/lib/mongodb";
 import Room from "@/models/Room";
 import Booking from "@/models/Booking";
@@ -38,9 +38,6 @@ export async function getStats(): Promise<AdminStats> {
 
     // 獲取今日日期範圍
     const today = new Date();
-    const startOfToday = startOfDay(today);
-    const endOfToday = endOfDay(today);
-
     // 並行獲取各項統計資料
     const [
       totalRooms,

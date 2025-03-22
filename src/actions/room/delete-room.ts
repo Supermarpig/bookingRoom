@@ -1,18 +1,11 @@
 'use server'
 
 import { getServerSession } from "next-auth";
-import { z } from "zod";
+
 import connectDB from "@/lib/mongodb";
 import Room from "@/models/Room";
-import Booking from "@/models/Booking";
 import { authOptions } from "@/lib/auth";
 
-// 刪除會議室的輸入驗證 schema
-const DeleteRoomSchema = z.object({
-  id: z.string().min(1, "會議室 ID 不能為空"),
-});
-
-type DeleteRoomInput = z.infer<typeof DeleteRoomSchema>;
 
 export async function deleteRoom(roomId: string): Promise<void> {
   console.log("開始刪除會議室");
